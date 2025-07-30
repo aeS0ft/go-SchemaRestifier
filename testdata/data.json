@@ -1,0 +1,105 @@
+{
+  "table": {
+    "name": "example_table",
+    "description": "Example table for schema metaprogramming tool",
+    "columns": [
+      {
+        "name": "example_id",
+        "type": "integer",
+        "primary_key": true,
+        "auto_increment": true,
+        "nullable": false,
+        "struct": {
+          "field_name": "ExampleID",
+          "field_type": "int",
+          "json_tag": "example_id"
+        },
+        "query": {
+          "select": true,
+          "filter": true,
+          "sort": true
+        }
+      },
+      {
+        "name": "example_text",
+        "type": "varchar(255)",
+        "nullable": false,
+        "unique": false,
+        "struct": {
+          "field_name": "ExampleText",
+          "field_type": "string",
+          "json_tag": "example_text"
+        },
+        "query": {
+          "select": true,
+          "filter": true,
+          "sort": false,
+          "search": true
+        }
+      },
+      {
+        "name": "created_on",
+        "type": "timestamp",
+        "nullable": false,
+        "struct": {
+          "field_name": "CreatedOn",
+          "field_type": "datetime",
+          "json_tag": "created_on"
+        },
+        "query": {
+          "select": true,
+          "filter": false,
+          "sort": true
+        }
+      },
+      {
+        "name": "config",
+        "type": "json",
+        "nullable": true,
+        "struct": {
+          "field_name": "Config",
+          "field_type": "interface{}",
+          "json_tag": "config"
+        },
+        "query": {
+          "select": true,
+          "filter": false,
+          "sort": false
+        },
+        "json_data": {
+          "color": "string",
+          "size": "integer",
+          "tags": ["string"],
+          "extra": {
+            "foo": "bool",
+            "baz": ["integer"]
+          }
+        }
+      }
+    ]
+  },
+  "crud": {
+    "create": {
+      "enabled": true,
+      "endpoint": "/example_table",
+      "auth_required": false
+    },
+    "read": {
+      "enabled": true,
+      "endpoint": "/example_table",
+      "auth_required": false,
+      "list_supported": true,
+      "single_supported": true
+    },
+    "update": {
+      "enabled": true,
+      "endpoint": "/example_table/{example_id}",
+      "auth_required": false
+    },
+    "delete": {
+      "enabled": true,
+      "endpoint": "/example_table/{example_id}",
+      "auth_required": false
+    }
+  }
+}
