@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-// ReadFile reads the content of a file to check if a http server has already been made and concrates if so and returns it as a byte slice.
+// ReadFile reads the content of a file to check if a http server has already been made and concretes if so and returns it as a byte slice.
 func ReadFile(filePath string) ([]byte, error) {
 	file, err := os.Open(filePath)
 	if err != nil {
@@ -46,4 +46,15 @@ func WriteFile(filePath string, content []byte) error {
 	}
 
 	return nil
+}
+
+// CheckFile checks if a file exists at the given path.
+func CheckFile(filePath string) (bool, error) {
+	_, err := os.Stat(filePath)
+	if os.IsNotExist(err) {
+		return false, nil // File does not exist
+	} else if err != nil {
+		return false, fmt.Errorf("failed to check file %s: %w", filePath, err)
+	}
+	return true, nil // File exists
 }
