@@ -6,7 +6,6 @@ import (
 
 func ParseSchema(schemaFilePath string) (Schema, error) {
 	fmt.Println("Parsing schema...")
-	// Here you would implement the logic to parse the schema.
 	UtilSchema, err := loadSchemaFromUtil(schemaFilePath)
 
 	if err != nil {
@@ -14,50 +13,58 @@ func ParseSchema(schemaFilePath string) (Schema, error) {
 		return Schema{}, fmt.Errorf("failed to load schema from file %s: %w", schemaFilePath, err)
 	}
 	fmt.Println(UtilSchema)
-	// UtilSchema is a dynamic interface{} type that can hold any JSON structure.
 	schema := Schema{}
 	for key, value := range UtilSchema.(map[string]interface{}) {
 		fmt.Printf("Key: %s, Value: %v\n", key, value)
 		if key == "table" {
-
 			for key, value := range value.(map[string]interface{}) {
 				switch key {
 				case "name":
 					schema.Name = value.(string)
 				case "columns":
 					columns := value.([]interface{})
-					schema.Fields = &[]Column{} // Initialize the Fields slice
+					schema.Columns = &[]Column{}
 					for _, col := range columns {
 						if colMap, ok := col.(map[string]interface{}); ok {
+							name, _ := colMap["name"].(string)
+							typ, _ := colMap["type"].(string)
+							desc, _ := colMap["description"].(string)
 							column := Column{
-								Name:        colMap["name"].(string),
-								Type:        colMap["type"].(string),
-								Description: colMap["description"].(string),
+								Name:        name,
+								Type:        typ,
+								Description: desc,
 							}
 							if pk, ok := colMap["primary_key"]; ok && pk.(bool) {
 								column.PrimaryKey = true
+							} else {
+								column.PrimaryKey = false
 							}
-							*schema.Fields = append(*schema.Fields, column)
+							if nested, ok := colMap["json_data"]; ok {
+								if nestedMap, ok := nested.(map[string]interface{}); ok {
+									convertedMap := make(map[string][]interface{})
+									for k, v := range nestedMap {
+										convertedMap[k] = []interface{}{v}
+									}
+									column.Nestedcolumns = convertedMap
+								} else {
+									fmt.Println("Invalid nested columns format:", nested)
+								}
+							}
+							*schema.Columns = append(*schema.Columns, column)
 						} else {
 							fmt.Println("Invalid column format:", col)
 						}
-
 					}
 				default:
 					fmt.Printf("Unknown table key: %s with value: %v\n", key, value)
 				}
-
 			}
-		}
-
-		if key == "crud" {
+		} else if key == "crud" {
 			schema.Crud = value.(map[string]interface{})
 		} else {
 			fmt.Printf("Unknown key: %s with value: %v\n", key, value)
 		}
 	}
-	// This is a placeholder function to demonstrate the structure.
-	// You can call other functions or methods to handle the actual parsing logic.
 	fmt.Println("Schema parsed successfully.")
 	return schema, nil
 }
