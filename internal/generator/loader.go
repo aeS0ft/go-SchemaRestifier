@@ -17,3 +17,8 @@ func readFile(filePath string) ([]byte, error) {
 	}
 	return content, nil
 }
+
+// writeFile writes the given content to a file at the specified path, creating the file if it does not exist.
+func writeFile(filePath string, content []byte) error {
+	return util.WriteFile(filePath, content)
+}
