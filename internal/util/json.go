@@ -26,3 +26,9 @@ func ReadJSONFile(filePath string, v interface{}) error {
 
 	return nil
 }
+
+// IsJSONFile checks if the given file path has a ".json" extension.
+// It returns true if the file path ends with ".json", false otherwise.
+func IsJSONFile(filePath string) bool {
+	return len(filePath) >= 5 && filePath[len(filePath)-5:] == ".json"
+}
