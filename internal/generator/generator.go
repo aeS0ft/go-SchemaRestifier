@@ -71,7 +71,7 @@ func GenerateGoMod(filePath string, name string) error {
 	return nil
 }
 
-// GenarateModel generates the model layer with all the structs from the schema
+// GenerateModel generates the model layer with all the structs from the schema
 func GenerateModel(filePath string, content []parser.Schema) error {
 	exists, err := checkFileExists(filePath)
 	if err != nil {
