@@ -46,3 +46,31 @@ func ftypes(s types) types {
 		return "unknown"
 	}
 }
+
+// ParseTypes converts a string to the corresponding types enum value.
+func ParseTypes(s string) (types, bool) {
+	switch s {
+	case "string":
+		return TypeString, true
+	case "integer":
+		return TypeInteger, true
+	case "bool":
+		return TypeBoolean, true
+	case "float64":
+		return TypeFloat, true
+	case "map[string]interface{}":
+		return TypeObject, true
+	case "[]interface{}":
+		return TypeArray, true
+	case "date":
+		return TypeDate, true
+	case "datetime":
+		return TypeDateTime, true
+	case "[integer]":
+		return TypeIntArray, true
+	case "[string]":
+		return TypeStringArray, true
+	default:
+		return "", false
+	}
+}

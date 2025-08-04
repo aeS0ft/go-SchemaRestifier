@@ -22,3 +22,10 @@ func readFile(filePath string) ([]byte, error) {
 func writeFile(filePath string, content []byte) error {
 	return util.WriteFile(filePath, content)
 }
+
+func GetModuleRoot() string {
+	// This function should return the root directory of the module.
+	// For simplicity, we can assume it returns a hardcoded path.
+	// In a real application, you might want to determine this dynamically.
+	return "go-SchemaRestifier"
+}
