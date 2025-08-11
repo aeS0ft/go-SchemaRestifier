@@ -14,6 +14,19 @@ const (
 	TypeDateTime    types = "datetime"
 	TypeIntArray    types = "[integer]"
 	TypeStringArray types = "[string]"
+	TypeStringVar   types = "varchar(255)"
+	TypeText        types = "text"
+	TypeVarchar     types = "varchar"
+	TypeChar        types = "char"
+	TypeSerial      types = "serial"
+	TypeBigSerial   types = "bigserial"
+	TypeBigInt      types = "bigint"
+	TypeSmallInt    types = "smallint"
+	TypeNumeric     types = "numeric"
+	TypeUUID        types = "uuid"
+	TypeJSONB       types = "jsonb"
+	TypeBytea       types = "bytea"
+	TypeTimestamp   types = "timestamp"
 )
 
 var typeNames = map[types]string{
@@ -27,6 +40,19 @@ var typeNames = map[types]string{
 	TypeDateTime:    "datetime",
 	TypeIntArray:    "[]int",
 	TypeStringArray: "[]string",
+	TypeStringVar:   "string",
+	TypeText:        "string",
+	TypeVarchar:     "string",
+	TypeChar:        "string",
+	TypeSerial:      "int",
+	TypeBigSerial:   "int64",
+	TypeBigInt:      "int64",
+	TypeSmallInt:    "int16",
+	TypeNumeric:     "float64",
+	TypeUUID:        "string",
+	TypeJSONB:       "map[string]interface{}",
+	TypeBytea:       "[]byte",
+	TypeTimestamp:   "time.Time",
 }
 
 // String returns the string representation of the types value.
@@ -40,7 +66,7 @@ func (t types) String() string {
 // ftypes returns the canonical type or "unknown" if not found.
 func ftypes(s types) types {
 	switch s {
-	case TypeString, TypeInteger, TypeBoolean, TypeFloat, TypeObject, TypeArray, TypeDate, TypeDateTime:
+	case TypeString, TypeInteger, TypeBoolean, TypeFloat, TypeObject, TypeArray, TypeDate, TypeDateTime, TypeChar, TypeSerial, TypeBigSerial, TypeBigInt, TypeSmallInt, TypeNumeric, TypeUUID, TypeJSONB, TypeBytea, TypeTimestamp:
 		return s
 	default:
 		return "unknown"
@@ -70,6 +96,20 @@ func ParseTypes(s string) (types, bool) {
 		return TypeIntArray, true
 	case "[string]":
 		return TypeStringArray, true
+	case "varchar(255)":
+		return TypeStringVar, true
+	case "text":
+		return TypeText, true
+	case "varchar":
+		return TypeVarchar, true
+	case "char":
+		return TypeChar, true
+	case "serial":
+		return TypeSerial, true
+	case "bigserial":
+		return TypeBigSerial, true
+	case "timestamp":
+		return TypeTimestamp, true
 	default:
 		return "", false
 	}

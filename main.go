@@ -18,6 +18,7 @@ func main() {
 
 	fmt.Println(data)
 
-	err = generator.GeneratorMain("testdata", data)
+	const outputDir = "output/"
+	err = generator.GeneratorMain(outputDir, data)
 
 }
