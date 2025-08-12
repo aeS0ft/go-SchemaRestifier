@@ -2,8 +2,10 @@ package generator
 
 import (
 	"fmt"
+	"go-SchemaRestifier/internal/datastructures"
 	"go-SchemaRestifier/internal/parser"
 	"os"
+	"sync"
 )
 
 type TableNameList []string
@@ -82,37 +84,143 @@ func GenerateModel(filePath string, content []parser.Schema) error {
 		return fmt.Errorf("file %s already exists, skipping generation.", filePath)
 	}
 	modelContent := "package model\n\n"
+	nestedStructContent := ""
 	for _, schema := range content {
 		modelContent += fmt.Sprintf("type %s struct {\n", schema.Name)
 		for _, column := range *schema.Columns {
 			s := fmt.Sprintf("%s", column.Type)
 			a, _ := ParseTypes(s)
-			modelContent += fmt.Sprintf("\t%s %s `json:\"%s\"`\n", column.Name, a.String(), column.Name)
+			if s != "json" {
+				modelContent += fmt.Sprintf("\t%s %s `json:\"%s\"`\n", column.Name, a.String(), column.Name)
+			} else {
+				modelContent += fmt.Sprintf("\t%s %sOBJ\n", column.Name, column.Name)
+
+			}
 			if len(column.Nestedcolumns) > 0 {
+				p := new(string)
+				nestedMap := make(map[string]interface{})
+				for k, v := range column.Nestedcolumns {
+					for _, b := range v {
+						nestedMap[k] = b
+					}
+
+				}
+				nestedMap["@__root_name__@"] = column.Name
+				nestedthing, _ := NestedMapAlgo(nestedMap, &datastructures.Node{}, nil)
+				fmt.Println(nestedthing)
+
+				nestedStructContent = fmt.Sprintf("type %sOBJ struct {\n", column.Name)
 
 				for nestedName, nestedColumns := range column.Nestedcolumns {
-					for _, nestedColumn := range nestedColumns {
-						s := fmt.Sprintf("%s", nestedColumn)
-						nestedtype, _ := ParseTypes(s)
-						modelContent += fmt.Sprintf("\t%s %s `json:\"%s\"`\n", nestedName, nestedtype.String(), nestedName)
-						if nestedColumn == "PrimaryKey" {
-							modelContent += fmt.Sprintf("\t// Nested column is a primary key\n")
+					for _, nestedColumna := range nestedColumns {
+						// if statement to check if the column is a nested column ie. a interface or map[string]interface{} and create a new struct
+
+						if _, ok := nestedColumna.(map[string]interface{}); ok {
+							new_nestedObj := fmt.Sprintf("type %sOBJ struct {\n", nestedName)
+							for key, nestedColumnd := range nestedColumna.(map[string]interface{}) {
+								if a, ok := nestedColumnd.(map[string]interface{}); ok {
+									a["@__root_name__@"] = key
+									go func() {
+										_, err := NestedMapAlgo(nestedColumnd.(map[string]interface{}), &datastructures.Node{}, nil)
+										if err != nil {
+											fmt.Println(err)
+										} else {
+											fmt.Println("Nested map algo reached base case")
+										}
+									}()
+								}
+
+								s := fmt.Sprintf("%s", nestedColumnd)
+								nestedtype, _ := ParseTypes(s)
+								new_nestedObj += fmt.Sprintf("\t%s %s `json:\"%s\"`\n", key, nestedtype.String(), nestedName)
+								*p += new_nestedObj
+								new_nestedObj = ""
+
+							}
+							*p += "}\n"
+
+						}
+
+						if _, ok := nestedColumna.(map[string]interface{}); !ok {
+							s := fmt.Sprintf("%s", nestedColumna)
+							nestedtype, _ := ParseTypes(s)
+							nestedStructContent += fmt.Sprintf("\t%s %s `json:\"%s\"`\n", nestedName, nestedtype.String(), nestedName)
 						} else {
-							modelContent += fmt.Sprintf("\t// Nested column: %s\n", nestedColumn)
+							nestedStructContent += fmt.Sprintf("\t%s %sOBJ `json:\"%s\"`\n", nestedName, nestedName, nestedName)
 						}
 
 					}
 
-					modelContent += fmt.Sprintf("\t// Nested columns: %v\n", nestedColumns)
 				}
-				modelContent += fmt.Sprintf("\t// Nested columns: %v\n", column.Nestedcolumns)
+				nestedStructContent += "}\n"
+				nestedStructContent += *p
 			}
+
 		}
 		modelContent += "}\n\n"
+		modelContent += nestedStructContent
+
+		err = writeFile(filePath+""+schema.Name+".go", []byte(modelContent))
+		if err != nil {
+			return fmt.Errorf("failed to write file %s: %w", filePath, err)
+		}
 	}
 	return nil
 }
 
+// NestedMapAlgo processes a nested map structure and converts it into a tree-like structure using the datastructures.Node type.
+// It recursively traverses the map, creating nodes for each key-value pair and handling nested maps appropriately.
+func NestedMapAlgo(content map[string]interface{}, n *datastructures.Node, root *datastructures.Node) (datastructures.Node, error) {
+	var wg sync.WaitGroup
+	if len(content) == 0 {
+		return datastructures.Node{}, fmt.Errorf("empty map")
+	}
+
+	// Initialize the root node of the tree structure
+	if root == nil {
+		root = new(datastructures.Node)
+		root.Name = content["@__root_name__@"].(string)
+
+	}
+	if datastructures.IsNodeEmpty(*n) {
+		*n = *root
+		root = n
+
+	}
+
+	for key, value := range content {
+		// it is the root denoter, so we skip it
+		if key == "@__root_name__@" {
+			continue
+		}
+		if _, ok := value.(map[string]interface{}); !ok {
+
+			parsedType, _ := ParseTypes(value.(string))
+			typeName := parsedType.String()
+			field := datastructures.Fields{
+				Name: key,
+				Type: typeName,
+			}
+			n.Fields = append(n.Fields, &field)
+
+			fmt.Println("Base case reached with value:", value)
+		} else {
+			fmt.Println("Nested map reached with value:", value)
+			newN := new(datastructures.Node)
+			newN.Name = key
+			n.Children = append(n.Children, newN)
+			wg.Add(1)
+			go func(key string, value interface{}) {
+				defer wg.Done()
+				_, _ = NestedMapAlgo(value.(map[string]interface{}), newN, root)
+
+			}(key, value)
+
+		}
+	}
+	wg.Wait()
+	return *root, nil
+}
 func GenerateAPIController(filePath string, content []byte) error {
 	file, err := os.Create(filePath)
 	if err != nil {
