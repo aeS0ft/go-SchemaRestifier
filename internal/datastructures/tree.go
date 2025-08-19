@@ -1,9 +1,12 @@
 package datastructures
 
+import "sync"
+
 type Node struct {
 	Name     string
 	Fields   []*Fields
 	Children []*Node
+	Mu       sync.Mutex
 }
 
 func IsNodeEmpty(n Node) bool {
