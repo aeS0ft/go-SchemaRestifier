@@ -1,0 +1,108 @@
+{
+  "table": {
+    "name": "user_profile",
+    "description": "User profile table for schema metaprogramming tool",
+    "columns": [
+      {
+        "name": "user_id",
+        "type": "integer",
+        "primary_key": true,
+        "auto_increment": true,
+        "nullable": false,
+        "struct": {
+          "field_name": "UserID",
+          "field_type": "int",
+          "json_tag": "user_id"
+        },
+        "query": {
+          "select": true,
+          "filter": true,
+          "sort": true
+        }
+      },
+      {
+        "name": "username",
+        "type": "varchar(100)",
+        "nullable": false,
+        "unique": true,
+        "struct": {
+          "field_name": "Username",
+          "field_type": "string",
+          "json_tag": "username"
+        },
+        "query": {
+          "select": true,
+          "filter": true,
+          "sort": false,
+          "search": true
+        }
+      },
+      {
+        "name": "profile_data",
+        "type": "json",
+        "nullable": true,
+        "struct": {
+          "field_name": "ProfileData",
+          "field_type": "object",
+          "json_tag": "profile_data"
+        },
+        "query": {
+          "select": true,
+          "filter": false,
+          "sort": false
+        },
+        "json_data": {
+          "bio": "string",
+          "age": "integer",
+          "settings": {
+            "theme": "string",
+            "notifications": {
+              "email": "bool",
+              "sms": "bool"
+            }
+          },
+          "tags": "[string]"
+        }
+      },
+      {
+        "name": "created_at",
+        "type": "timestamp",
+        "nullable": false,
+        "struct": {
+          "field_name": "CreatedAt",
+          "field_type": "datetime",
+          "json_tag": "created_at"
+        },
+        "query": {
+          "select": true,
+          "filter": false,
+          "sort": true
+        }
+      }
+    ]
+  },
+  "crud": {
+    "create": {
+      "enabled": true,
+      "endpoint": "/user_profile",
+      "auth_required": true
+    },
+    "read": {
+      "enabled": true,
+      "endpoint": "/user_profile",
+      "auth_required": true,
+      "list_supported": true,
+      "single_supported": true
+    },
+    "update": {
+      "enabled": true,
+      "endpoint": "/user_profile/{user_id}",
+      "auth_required": true
+    },
+    "delete": {
+      "enabled": true,
+      "endpoint": "/user_profile/{user_id}",
+      "auth_required": true
+    }
+  }
+}
