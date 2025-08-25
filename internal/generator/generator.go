@@ -6,6 +6,8 @@ import (
 	"go-SchemaRestifier/internal/parser"
 	"os"
 	"sync"
+
+	"github.com/iancoleman/strcase"
 )
 
 type TableNameList []string
@@ -83,18 +85,18 @@ func GenerateModel(filePath string, content []parser.Schema) error {
 	if exists {
 		return fmt.Errorf("file %s already exists, skipping generation.", filePath)
 	}
-	modelContent := "package model\n\n"
-	nestedStructContent := ""
 	for _, schema := range content {
-		modelContent += fmt.Sprintf("type %s struct {\n", schema.Name)
+		modelContent := "package model\n\n"
+		modelContent += fmt.Sprintf("type %s struct {\n", strcase.ToCamel(schema.Name))
+		nestedStructContent := ""
 
 		for _, column := range *schema.Columns {
 			s := fmt.Sprintf("%s", column.Type)
 			a, _ := ParseTypes(s)
 			if s != "json" {
-				modelContent += fmt.Sprintf("\t%s %s `json:\"%s\"`\n", column.Name, a.String(), column.Name)
+				modelContent += fmt.Sprintf("\t%s %s `db:\"%s\"`\n", strcase.ToCamel(column.Name), a.String(), column.Name)
 			} else {
-				modelContent += fmt.Sprintf("\t%s %sOBJ\n", column.Name, column.Name)
+				modelContent += fmt.Sprintf("\t%s %sOBJ `json:\"%s\"`\n", strcase.ToCamel(column.Name), strcase.ToCamel(column.Name), column.Name)
 
 			}
 			if len(column.Nestedcolumns) > 0 {
@@ -193,16 +195,16 @@ func TraverseTree(n *datastructures.Node, p *string) (string, error) {
 	if n == nil {
 		return "", fmt.Errorf("node is nil")
 	} else {
-		*p += fmt.Sprintf("type %sOBJ struct {\n", n.Name)
+		*p += fmt.Sprintf("type %sOBJ struct {\n", strcase.ToCamel(n.Name))
 	}
 	fmt.Println(n.Name)
 
 	for _, field := range n.Fields {
-		*p += fmt.Sprintf("\t%s %s `json:\"%s\"`\n", field.Name, field.Type, field.Name)
+		*p += fmt.Sprintf("\t%s %s `json:\"%s\"`\n", strcase.ToCamel(field.Name), field.Type, field.Name)
 	}
 	// needed to build the struct with the fields for each child so encapsulation works
 	for _, child := range n.Children {
-		*p += fmt.Sprintf("\t%s %sOBJ `json:\"%s\"`\n", child.Name, child.Name, child.Name)
+		*p += fmt.Sprintf("\t%s %sOBJ `json:\"%s\"`\n", strcase.ToCamel(child.Name), strcase.ToCamel(child.Name), child.Name)
 
 	}
 	*p += "}\n\n"
