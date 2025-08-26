@@ -1,5 +1,7 @@
 package generator
 
+import "strings"
+
 // types represents supported type strings.
 type types string
 
@@ -75,42 +77,43 @@ func ftypes(s types) types {
 
 // ParseTypes converts a string to the corresponding types enum value.
 func ParseTypes(s string) (types, bool) {
-	switch s {
-	case "string":
+	switch {
+	case s == "string":
 		return TypeString, true
-	case "integer":
+	case s == "integer":
 		return TypeInteger, true
-	case "bool":
+	case s == "bool":
 		return TypeBoolean, true
-	case "float64":
+	case s == "float64":
 		return TypeFloat, true
-	case "map[string]interface{}":
+	case s == "map[string]interface{}":
 		return TypeObject, true
-	case "[]interface{}":
+	case s == "[]interface{}":
 		return TypeArray, true
-	case "date":
+	case s == "date":
 		return TypeDate, true
-	case "datetime":
+	case s == "datetime":
 		return TypeDateTime, true
-	case "[integer]":
+	case s == "[integer]":
 		return TypeIntArray, true
-	case "[string]":
+	case s == "[string]":
 		return TypeStringArray, true
-	case "varchar(255)":
+	case strings.Contains(s, "varchar"):
 		return TypeStringVar, true
-	case "text":
+	case s == "varchar(255)":
+		return TypeStringVar, true
+	case s == "text":
 		return TypeText, true
-	case "varchar":
+	case s == "varchar":
 		return TypeVarchar, true
-	case "char":
+	case s == "char":
 		return TypeChar, true
-	case "serial":
+	case s == "serial":
 		return TypeSerial, true
-	case "bigserial":
+	case s == "bigserial":
 		return TypeBigSerial, true
-	case "timestamp":
+	case s == "timestamp":
 		return TypeTimestamp, true
-	default:
-		return "", false
 	}
+	return "unknown", false
 }

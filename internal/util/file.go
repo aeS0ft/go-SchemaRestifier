@@ -29,7 +29,10 @@ func ReadFile(filePath string) ([]byte, error) {
 
 // WriteFile writes the given content to a file at the specified path, creating the file if it does not exist.
 func WriteFile(filePath string, content []byte) error {
+
 	file, err := os.Create(filePath)
+	newfilepath := StripGOFileFromPath(filePath)
+	println(newfilepath)
 	if err != nil {
 		return fmt.Errorf("failed to create file %s: %w", filePath, err)
 	}
@@ -72,4 +75,16 @@ func ListFilesInDirectory(directoryPath string) ([]string, error) {
 	}
 
 	return filePaths, nil
+}
+
+func StripGOFileFromPath(filePath string) string {
+	result := ""
+	runes := []rune(filePath)
+	for i := len(runes) - 1; i >= 0; i-- {
+		if filePath[i] == '/' {
+			result = string(runes[0:i])
+			break
+		}
+	}
+	return result
 }

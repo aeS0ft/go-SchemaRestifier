@@ -26,11 +26,19 @@ func GeneratorMain(filePath string, content []parser.Schema) error {
 	if err != nil {
 		return err
 	}
-	err = GenerateModel(filePath+"/model", content)
+	err = GenerateModel(filePath+"/model/", content)
 	if err != nil {
 		return fmt.Errorf("failed to generate model: %w", err)
 	}
 	return nil
+
+	//TODO: Create function to generate the API controller layer which uses a object instance to make controllers for the api routes. Using Mux router.
+
+	// TODO: Create a function to generate the logic/service layer which uses the crud values from the schema,
+	// the types to be used for validation i.e length of strings.
+	// nullability of fields, uniqueness etc.
+
+	//TODO: Database layer using sqlx with crud operations. and potentially automatic middleware for authentication. for postgresql.
 
 }
 
