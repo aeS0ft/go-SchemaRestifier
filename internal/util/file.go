@@ -30,9 +30,21 @@ func ReadFile(filePath string) ([]byte, error) {
 // WriteFile writes the given content to a file at the specified path, creating the file if it does not exist.
 func WriteFile(filePath string, content []byte) error {
 
-	file, err := os.Create(filePath)
 	newfilepath := StripGOFileFromPath(filePath)
-	println(newfilepath)
+	fileExists, err := CheckFile(newfilepath)
+
+	if fileExists == false {
+		err := os.Mkdir(newfilepath, 0755)
+
+		if err != nil {
+			return fmt.Errorf("failed to create directory %s: %w", filePath, err)
+		}
+
+	}
+	if err != nil {
+		return fmt.Errorf("failed to check if file exists %s: %w", filePath, err)
+	}
+	file, err := os.Create(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to create file %s: %w", filePath, err)
 	}

@@ -26,7 +26,7 @@ func GeneratorMain(filePath string, content []parser.Schema) error {
 	if err != nil {
 		return err
 	}
-	err = GenerateModel(filePath+"/model/", content)
+	err = GenerateModel(filePath+"model/", content)
 	if err != nil {
 		return fmt.Errorf("failed to generate model: %w", err)
 	}
@@ -85,14 +85,8 @@ func GenerateGoMod(filePath string, name string) error {
 
 // GenerateModel generates the model layer with all the structs from the schema
 func GenerateModel(filePath string, content []parser.Schema) error {
-	exists, err := checkFileExists(filePath)
-	if err != nil {
-		return fmt.Errorf("failed to check if file exists %s: %w", filePath, err)
-	}
+
 	// TODO: add handling for existing file
-	if exists {
-		return fmt.Errorf("file %s already exists, skipping generation.", filePath)
-	}
 	for _, schema := range content {
 		modelContent := "package model\n\n"
 		modelContent += fmt.Sprintf("type %s struct {\n", strcase.ToCamel(schema.Name))
@@ -129,7 +123,7 @@ func GenerateModel(filePath string, content []parser.Schema) error {
 		modelContent += "}\n\n"
 		modelContent += nestedStructContent
 
-		err = writeFile(filePath+""+schema.Name+".go", []byte(modelContent))
+		err := writeFile(filePath+""+schema.Name+".go", []byte(modelContent))
 		if err != nil {
 			return fmt.Errorf("failed to write file %s: %w", filePath, err)
 		}
