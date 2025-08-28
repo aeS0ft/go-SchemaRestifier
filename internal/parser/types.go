@@ -12,10 +12,13 @@ type Schema struct {
 
 // Column represents a single column in a schema.
 type Column struct {
-	Name          string                   `json:"name"`                  // Name of the column
-	Type          string                   `json:"type"`                  // Type of the column (e.g., string, integer, etc.)
-	Description   string                   `json:"description,omitempty"` // Optional description of the column
-	PrimaryKey    bool                     `json:"primary_key,omitempty"` // Indicates if the column is a primary key
-	Nestedcolumns map[string][]interface{} `json:"json_data,omitempty"`   // Optional field for nested schemas
+	Name          string                 `json:"name"`                  // Name of the column
+	Type          string                 `json:"type"`                  // Type of the column (e.g., string, integer, etc.)
+	Description   string                 `json:"description,omitempty"` // Optional description of the column
+	PrimaryKey    bool                   `json:"primary_key,omitempty"` // Indicates if the column is a primary key
+	Nullable      bool                   `json:"nullable,omitempty"`
+	Unique        bool                   `json:"unique,omitempty"`
+	Hidden        bool                   `json:"hidden,omitempty"`
+	Nestedcolumns map[string]interface{} `json:"json_data,omitempty"` // Optional field for nested schemas
 
 }

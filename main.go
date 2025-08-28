@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go-SchemaRestifier/internal/generator"
 	"go-SchemaRestifier/internal/parser"
+	"path/filepath"
 )
 
 func main() {
@@ -18,7 +19,13 @@ func main() {
 
 	fmt.Println(data)
 
-	const outputDir = "output/"
-	err = generator.GeneratorMain(outputDir, data)
+	filedir, err := filepath.Abs("./")
+	if err != nil {
+		fmt.Println("Error determining absolute path:", err)
+		return
+	}
+
+	const outputDir = "/output/"
+	err = generator.GeneratorMain(filedir+outputDir, data)
 
 }
