@@ -15,14 +15,7 @@ type TableNameList []string
 // GeneratorMain is the main function for generating the Go code based on the parsed schema.
 // It takes the file path where the generated code will be saved and the content which is a slice of parser.Schema.
 func GeneratorMain(filePath string, content []parser.Schema) error {
-	tableNames := make(TableNameList, 0, len(content))
-
-	for key, value := range content {
-		tableNames = append(tableNames, value.Name)
-		fmt.Printf("Key: %s, Value: %v\n", key, value)
-	}
-	runnerpath := filePath + "/runner.go"
-	err := GenerateRunner(runnerpath, tableNames)
+	err := GenerateRunner(filePath+"/runner.go", content)
 	if err != nil {
 		return err
 	}
@@ -42,8 +35,12 @@ func GeneratorMain(filePath string, content []parser.Schema) error {
 
 }
 
-func GenerateRunner(filePath string, content []string) error {
+func GenerateRunner(filePath string, content []parser.Schema) error {
 	exists, err := checkFileExists(filePath)
+	tableNames := make(TableNameList, 0, len(content))
+	for _, value := range content {
+		tableNames = append(tableNames, value.Name)
+	}
 	contents := "package main \n\nimport (\n\t\"fmt\"\n\"net/http\"\n)\n\nfunc main() {\nmux := http.NewServeMux()\n"
 	if err != nil {
 		return fmt.Errorf("failed to check if file exists %s: %w", filePath, err)
@@ -53,7 +50,7 @@ func GenerateRunner(filePath string, content []string) error {
 		fmt.Printf("File %s already exists, skipping generation.\n", filePath)
 		return nil
 	}
-	for _, tableName := range content {
+	for _, tableName := range tableNames {
 		fmt.Printf("Generating runner/api-routing for table: %s\n", tableName)
 		contents += fmt.Sprintf("\t%s.RegisterRoutes(mux)\n}", tableName)
 
@@ -108,18 +105,9 @@ func GenerateModel(filePath string, content []parser.Schema) error {
 			}
 			if len(column.Nestedcolumns) > 0 {
 				p := new(string)
-				//nestedMap := make(map[string]interface{})
-				//for k, v := range column.Nestedcolumns {
-				//	for _, b := range v {
-				//		nestedMap[k] = b
-				//	}
-				//
-				//}
 				column.Nestedcolumns["...@__root_name__@..."] = column.Name
 				nestedthing, _ := MapToNodeTree(column.Nestedcolumns, &datastructures.Node{}, nil)
-				fmt.Println(nestedthing)
 				traTree, _ := TraverseTree(&nestedthing, p)
-
 				nestedStructContent += traTree
 
 			}
@@ -140,39 +128,28 @@ func GenerateModel(filePath string, content []parser.Schema) error {
 // It recursively traverses the map, creating nodes for each key-value pair and handling nested maps appropriately.
 func MapToNodeTree(content map[string]interface{}, n *datastructures.Node, root *datastructures.Node) (datastructures.Node, error) {
 	var wg sync.WaitGroup
-	if len(content) == 0 {
-		return datastructures.Node{}, fmt.Errorf("empty map")
-	}
-
-	// Initialize the root node of the tree structure
 	if root == nil {
 		root = new(datastructures.Node)
 		root.Name = content["...@__root_name__@..."].(string)
-
 	}
 	if datastructures.IsNodeEmpty(*n) {
 		n.Name = root.Name
 		root = n
-
+	}
+	if len(content) == 0 {
+		return datastructures.Node{}, fmt.Errorf("empty map")
 	}
 
 	for key, value := range content {
 		// it is the root denoter, so we skip it
-		if key == "...@__root_name__@..." {
+		switch key {
+		case "...@__root_name__@...":
 			continue
 		}
-		if _, ok := value.(map[string]interface{}); !ok {
 
-			parsedType, _ := ParseTypes(value.(string))
-			typeName := parsedType.String()
-			field := datastructures.Fields{
-				Name: key,
-				Type: typeName,
-			}
-			n.Fields = append(n.Fields, &field)
+		switch value.(type) {
 
-			fmt.Println("Base case reached with value:", value)
-		} else {
+		case map[string]interface{}:
 			fmt.Println("Nested map reached with value:", value)
 			newN := new(datastructures.Node)
 			newN.Name = key
@@ -186,6 +163,15 @@ func MapToNodeTree(content map[string]interface{}, n *datastructures.Node, root 
 				_, _ = MapToNodeTree(value.(map[string]interface{}), newN, root)
 
 			}(key, value)
+
+		default:
+			parsedType, _ := ParseTypes(value.(string))
+			typeName := parsedType.String()
+			field := datastructures.Fields{
+				Name: key,
+				Type: typeName,
+			}
+			n.Fields = append(n.Fields, &field)
 
 		}
 	}

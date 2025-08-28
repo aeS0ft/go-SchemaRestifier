@@ -2,36 +2,36 @@ package generator
 
 import "strings"
 
-// types represents supported type strings.
-type types string
+// Types represents supported type strings.
+type Types string
 
 const (
-	TypeString      types = "string"
-	TypeInteger     types = "integer"
-	TypeBoolean     types = "boolean"
-	TypeFloat       types = "float"
-	TypeObject      types = "object"
-	TypeArray       types = "array"
-	TypeDate        types = "date"
-	TypeDateTime    types = "datetime"
-	TypeIntArray    types = "[integer]"
-	TypeStringArray types = "[string]"
-	TypeStringVar   types = "varchar(255)"
-	TypeText        types = "text"
-	TypeVarchar     types = "varchar"
-	TypeChar        types = "char"
-	TypeSerial      types = "serial"
-	TypeBigSerial   types = "bigserial"
-	TypeBigInt      types = "bigint"
-	TypeSmallInt    types = "smallint"
-	TypeNumeric     types = "numeric"
-	TypeUUID        types = "uuid"
-	TypeJSONB       types = "jsonb"
-	TypeBytea       types = "bytea"
-	TypeTimestamp   types = "timestamp"
+	TypeString      Types = "string"
+	TypeInteger     Types = "integer"
+	TypeBoolean     Types = "boolean"
+	TypeFloat       Types = "float"
+	TypeObject      Types = "object"
+	TypeArray       Types = "array"
+	TypeDate        Types = "date"
+	TypeDateTime    Types = "datetime"
+	TypeIntArray    Types = "[integer]"
+	TypeStringArray Types = "[string]"
+	TypeStringVar   Types = "varchar(255)"
+	TypeText        Types = "text"
+	TypeVarchar     Types = "varchar"
+	TypeChar        Types = "char"
+	TypeSerial      Types = "serial"
+	TypeBigSerial   Types = "bigserial"
+	TypeBigInt      Types = "bigint"
+	TypeSmallInt    Types = "smallint"
+	TypeNumeric     Types = "numeric"
+	TypeUUID        Types = "uuid"
+	TypeJSONB       Types = "jsonb"
+	TypeBytea       Types = "bytea"
+	TypeTimestamp   Types = "timestamp"
 )
 
-var typeNames = map[types]string{
+var typeNames = map[Types]string{
 	TypeString:      "string",
 	TypeInteger:     "int",
 	TypeBoolean:     "bool",
@@ -58,7 +58,7 @@ var typeNames = map[types]string{
 }
 
 // String returns the string representation of the types value.
-func (t types) String() string {
+func (t Types) String() string {
 	if name, ok := typeNames[t]; ok {
 		return name
 	}
@@ -66,7 +66,7 @@ func (t types) String() string {
 }
 
 // ftypes returns the canonical type or "unknown" if not found.
-func ftypes(s types) types {
+func ftypes(s Types) Types {
 	switch s {
 	case TypeString, TypeInteger, TypeBoolean, TypeFloat, TypeObject, TypeArray, TypeDate, TypeDateTime, TypeChar, TypeSerial, TypeBigSerial, TypeBigInt, TypeSmallInt, TypeNumeric, TypeUUID, TypeJSONB, TypeBytea, TypeTimestamp:
 		return s
@@ -76,7 +76,7 @@ func ftypes(s types) types {
 }
 
 // ParseTypes converts a string to the corresponding types enum value.
-func ParseTypes(s string) (types, bool) {
+func ParseTypes(s string) (Types, bool) {
 	switch {
 	case s == "string":
 		return TypeString, true
