@@ -35,27 +35,27 @@ func ParseSchema(schemaFilePath string) ([]Schema, error) {
 								name, _ := colMap["name"].(string)
 								typ, _ := colMap["type"].(string)
 								desc, _ := colMap["description"].(string)
+								pk, _ := colMap["primary_key"].(bool)
+								nested, _ := colMap["json_data"].(map[string]interface{})
+
 								column := Column{
-									Name:        name,
-									Type:        typ,
-									Description: desc,
+									Name:          name,
+									Type:          typ,
+									Description:   desc,
+									PrimaryKey:    pk,
+									Nestedcolumns: nested,
 								}
-								if pk, ok := colMap["primary_key"]; ok && pk.(bool) {
-									column.PrimaryKey = true
-								} else {
-									column.PrimaryKey = false
-								}
-								if nested, ok := colMap["json_data"]; ok {
-									if nestedMap, ok := nested.(map[string]interface{}); ok {
-										convertedMap := make(map[string][]interface{})
-										for k, v := range nestedMap {
-											convertedMap[k] = []interface{}{v}
-										}
-										column.Nestedcolumns = convertedMap
-									} else {
-										fmt.Println("Invalid nested columns format:", nested)
-									}
-								}
+								//			if nested, ok := colMap["json_data"]; ok {
+								//				if nestedMap, ok := nested.(map[string]interface{}); ok {
+								//					convertedMap := make(map[string][]interface{})
+								//					for k, v := range nestedMap {
+								//						convertedMap[k] = []interface{}{v}
+								//					}
+								//					column.Nestedcolumns = convertedMap
+								//				} else {
+								//					fmt.Println("Invalid nested columns format:", nested)
+								//	}
+								//}
 								*schema.Columns = append(*schema.Columns, column)
 							} else {
 								fmt.Println("Invalid column format:", col)

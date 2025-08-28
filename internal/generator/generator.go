@@ -83,6 +83,11 @@ func GenerateGoMod(filePath string, name string) error {
 	return nil
 }
 
+func GenarateDTO(filepath string, content []parser.Schema) error {
+
+	return nil
+}
+
 // GenerateModel generates the model layer with all the structs from the schema
 func GenerateModel(filePath string, content []parser.Schema) error {
 
@@ -103,15 +108,15 @@ func GenerateModel(filePath string, content []parser.Schema) error {
 			}
 			if len(column.Nestedcolumns) > 0 {
 				p := new(string)
-				nestedMap := make(map[string]interface{})
-				for k, v := range column.Nestedcolumns {
-					for _, b := range v {
-						nestedMap[k] = b
-					}
-
-				}
-				nestedMap["...@__root_name__@..."] = column.Name
-				nestedthing, _ := MapToNodeTree(nestedMap, &datastructures.Node{}, nil)
+				//nestedMap := make(map[string]interface{})
+				//for k, v := range column.Nestedcolumns {
+				//	for _, b := range v {
+				//		nestedMap[k] = b
+				//	}
+				//
+				//}
+				column.Nestedcolumns["...@__root_name__@..."] = column.Name
+				nestedthing, _ := MapToNodeTree(column.Nestedcolumns, &datastructures.Node{}, nil)
 				fmt.Println(nestedthing)
 				traTree, _ := TraverseTree(&nestedthing, p)
 
