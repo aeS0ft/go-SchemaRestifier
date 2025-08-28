@@ -100,8 +100,6 @@ func ParseTypes(s string) (Types, bool) {
 		return TypeStringArray, true
 	case strings.Contains(s, "varchar"):
 		return TypeStringVar, true
-	case s == "varchar(255)":
-		return TypeStringVar, true
 	case s == "text":
 		return TypeText, true
 	case s == "varchar":
