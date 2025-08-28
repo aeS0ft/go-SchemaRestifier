@@ -80,7 +80,7 @@ func GenerateGoMod(filePath string, name string) error {
 	return nil
 }
 
-func GenarateDTO(filepath string, content []parser.Schema) error {
+func GenerateDTO(filepath string, content []parser.Schema) error {
 
 	return nil
 }
