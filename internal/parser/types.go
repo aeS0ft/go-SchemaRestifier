@@ -20,5 +20,5 @@ type Column struct {
 	Unique        bool                   `json:"unique,omitempty"`
 	Hidden        bool                   `json:"hidden,omitempty"`
 	Nestedcolumns map[string]interface{} `json:"json_data,omitempty"` // Optional field for nested schemas
-
+	Capabilities  map[string]bool        `json:"query,omitempty"`     // e.g., {"select": true, "filter": false}
 }

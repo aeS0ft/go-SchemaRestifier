@@ -37,6 +37,11 @@ func ParseSchema(schemaFilePath string) ([]Schema, error) {
 								desc, _ := colMap["description"].(string)
 								pk, _ := colMap["primary_key"].(bool)
 								nested, _ := colMap["json_data"].(map[string]interface{})
+								queries := make(map[string]bool)
+								for queryType, IsTrue := range colMap["query"].(map[string]interface{}) {
+
+									queries[queryType] = IsTrue.(bool)
+								}
 
 								column := Column{
 									Name:          name,
@@ -44,18 +49,8 @@ func ParseSchema(schemaFilePath string) ([]Schema, error) {
 									Description:   desc,
 									PrimaryKey:    pk,
 									Nestedcolumns: nested,
+									Capabilities:  queries,
 								}
-								//			if nested, ok := colMap["json_data"]; ok {
-								//				if nestedMap, ok := nested.(map[string]interface{}); ok {
-								//					convertedMap := make(map[string][]interface{})
-								//					for k, v := range nestedMap {
-								//						convertedMap[k] = []interface{}{v}
-								//					}
-								//					column.Nestedcolumns = convertedMap
-								//				} else {
-								//					fmt.Println("Invalid nested columns format:", nested)
-								//	}
-								//}
 								*schema.Columns = append(*schema.Columns, column)
 							} else {
 								fmt.Println("Invalid column format:", col)
