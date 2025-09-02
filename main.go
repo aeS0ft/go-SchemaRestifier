@@ -19,7 +19,11 @@ func main() {
 
 	fmt.Println(data)
 
-	filedir, _ := filepath.Abs("./")
+	filedir, err := filepath.Abs("./")
+	if err != nil {
+		fmt.Println("Error determining absolute path:", err)
+		return
+	}
 
 	const outputDir = "/output/"
 	err = generator.GeneratorMain(filedir+outputDir, data)
