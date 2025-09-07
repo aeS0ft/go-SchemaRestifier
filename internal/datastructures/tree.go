@@ -7,6 +7,8 @@ type Node struct {
 	Fields   []*Fields
 	Children []*Node
 	Mu       sync.Mutex
+	// updatable later
+	Hidden bool
 }
 
 func IsNodeEmpty(n Node) bool {
