@@ -108,15 +108,6 @@ func GenerateModel(filePath string, content []parser.Schema) error {
 				traTree, _ := TraverseTreeModel(column.Nestedcolumns, p)
 				nestedStructContent += traTree
 			}
-			//	if len(column.Nestedcolumns) > 0 {
-			//		p := new(string)
-			//		column.Nestedcolumns["...@__root_name__@..."] = column.Name
-			//		nestedthing, _ := ConvertNestedMapToNodeTree(column.Nestedcolumns, &datastructures.Node{}, nil)
-			//		traTree, _ := TraverseTreeModel(&nestedthing, p)
-			//		nestedStructContent += traTree
-			//
-			//	}
-
 		}
 		modelContent += "}\n\n"
 		modelContent += nestedStructContent
