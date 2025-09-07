@@ -2,7 +2,52 @@ package parser
 
 import (
 	"fmt"
+	"go-SchemaRestifier/internal/datastructures"
+	"sync"
 )
+
+func JsonDataAlgorithm(content map[string]interface{}, n *datastructures.Node, root *datastructures.Node) (datastructures.Node, error) {
+	var wg sync.WaitGroup
+	if datastructures.IsNodeEmpty(*n) {
+		n.Name = root.Name
+		root = n
+	}
+	if len(content) == 0 {
+		return datastructures.Node{}, fmt.Errorf("empty map")
+	}
+
+	for key, value := range content {
+		if m, ok := value.(map[string]interface{}); ok {
+			typ, _ := m["type"].(string)
+			switch typ {
+			case "object":
+				newN := new(datastructures.Node)
+				newN.Name = key
+				n.Mu.Lock()
+				n.Children = append(n.Children, newN)
+				n.Mu.Unlock()
+
+				wg.Add(1)
+				go func(key string, value interface{}) {
+					defer wg.Done()
+					_, _ = JsonDataAlgorithm(value.(map[string]interface{}), newN, root)
+
+				}(key, value)
+			default:
+				parsedType, _ := ParseTypes(typ)
+				typeName := parsedType.String()
+				field := datastructures.Fields{
+					Name: key,
+					Type: typeName,
+				}
+				n.Fields = append(n.Fields, &field)
+			}
+		}
+
+	}
+	wg.Wait()
+	return *root, nil
+}
 
 func ParseSchema(schemaFilePath string) ([]Schema, error) {
 	fmt.Println("Parsing schema...")
@@ -36,26 +81,33 @@ func ParseSchema(schemaFilePath string) ([]Schema, error) {
 								typ, _ := colMap["type"].(string)
 								desc, _ := colMap["description"].(string)
 								pk, _ := colMap["primary_key"].(bool)
-								nested, _ := colMap["json_data"].(map[string]interface{})
+								hidden, _ := colMap["hidden"].(bool)
+								struct_field, _ := colMap["struct"].(map[string]interface{})
+								field_name := struct_field["field_name"].(string)
+								var nested *datastructures.Node
+								if jsonData, ok := colMap["json_data"].(map[string]interface{}); ok {
+									prev_node := new(datastructures.Node)
+									prev_node.Name = field_name
+									node, _ := JsonDataAlgorithm(jsonData, &datastructures.Node{}, prev_node)
+									nested = &node
+								} else {
+									nested = nil
+								}
+								queries := make(map[string]bool)
+								for queryType, IsTrue := range colMap["query"].(map[string]interface{}) {
+
+									queries[queryType] = IsTrue.(bool)
+								}
 
 								column := Column{
 									Name:          name,
 									Type:          typ,
 									Description:   desc,
 									PrimaryKey:    pk,
+									Hidden:        hidden,
 									Nestedcolumns: nested,
+									Capabilities:  queries,
 								}
-								//			if nested, ok := colMap["json_data"]; ok {
-								//				if nestedMap, ok := nested.(map[string]interface{}); ok {
-								//					convertedMap := make(map[string][]interface{})
-								//					for k, v := range nestedMap {
-								//						convertedMap[k] = []interface{}{v}
-								//					}
-								//					column.Nestedcolumns = convertedMap
-								//				} else {
-								//					fmt.Println("Invalid nested columns format:", nested)
-								//	}
-								//}
 								*schema.Columns = append(*schema.Columns, column)
 							} else {
 								fmt.Println("Invalid column format:", col)

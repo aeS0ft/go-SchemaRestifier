@@ -5,7 +5,6 @@ import (
 	"go-SchemaRestifier/internal/datastructures"
 	"go-SchemaRestifier/internal/parser"
 	"os"
-	"sync"
 
 	"github.com/iancoleman/strcase"
 )
@@ -103,15 +102,12 @@ func GenerateModel(filePath string, content []parser.Schema) error {
 				modelContent += fmt.Sprintf("\t%s %sOBJ `json:\"%s\"`\n", strcase.ToCamel(column.Name), strcase.ToCamel(column.Name), column.Name)
 
 			}
-			if len(column.Nestedcolumns) > 0 {
+			if column.Nestedcolumns != nil {
+				// Your logic for handling nested columns
 				p := new(string)
-				column.Nestedcolumns["...@__root_name__@..."] = column.Name
-				nestedthing, _ := MapToNodeTree(column.Nestedcolumns, &datastructures.Node{}, nil)
-				traTree, _ := TraverseTree(&nestedthing, p)
+				traTree, _ := TraverseTreeModel(column.Nestedcolumns, p)
 				nestedStructContent += traTree
-
 			}
-
 		}
 		modelContent += "}\n\n"
 		modelContent += nestedStructContent
@@ -124,62 +120,7 @@ func GenerateModel(filePath string, content []parser.Schema) error {
 	return nil
 }
 
-// MapToNodeTree processes a nested map structure and converts it into a tree-like structure using the datastructures.Node type.
-// It recursively traverses the map, creating nodes for each key-value pair and handling nested maps appropriately.
-func MapToNodeTree(content map[string]interface{}, n *datastructures.Node, root *datastructures.Node) (datastructures.Node, error) {
-	var wg sync.WaitGroup
-	if root == nil {
-		root = new(datastructures.Node)
-		root.Name = content["...@__root_name__@..."].(string)
-	}
-	if datastructures.IsNodeEmpty(*n) {
-		n.Name = root.Name
-		root = n
-	}
-	if len(content) == 0 {
-		return datastructures.Node{}, fmt.Errorf("empty map")
-	}
-
-	for key, value := range content {
-		// it is the root denoter, so we skip it
-		switch key {
-		case "...@__root_name__@...":
-			continue
-		}
-
-		switch value.(type) {
-
-		case map[string]interface{}:
-			fmt.Println("Nested map reached with value:", value)
-			newN := new(datastructures.Node)
-			newN.Name = key
-			n.Mu.Lock()
-			n.Children = append(n.Children, newN)
-			n.Mu.Unlock()
-
-			wg.Add(1)
-			go func(key string, value interface{}) {
-				defer wg.Done()
-				_, _ = MapToNodeTree(value.(map[string]interface{}), newN, root)
-
-			}(key, value)
-
-		default:
-			parsedType, _ := ParseTypes(value.(string))
-			typeName := parsedType.String()
-			field := datastructures.Fields{
-				Name: key,
-				Type: typeName,
-			}
-			n.Fields = append(n.Fields, &field)
-
-		}
-	}
-	wg.Wait()
-	return *root, nil
-}
-
-func TraverseTree(n *datastructures.Node, p *string) (string, error) {
+func TraverseTreeModel(n *datastructures.Node, p *string) (string, error) {
 	if p == nil {
 
 		p = new(string)
@@ -204,7 +145,7 @@ func TraverseTree(n *datastructures.Node, p *string) (string, error) {
 
 	for _, child := range n.Children {
 
-		pString, err := TraverseTree(child, new(string))
+		pString, err := TraverseTreeModel(child, new(string))
 		if err != nil {
 			return "", err
 		}

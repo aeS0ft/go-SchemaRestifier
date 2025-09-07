@@ -9,6 +9,10 @@
         "primary_key": true,
         "auto_increment": true,
         "nullable": false,
+        "unique": true,
+        "index": true,
+        "hidden": false,
+        "default": null,
         "struct": {
           "field_name": "ExampleID",
           "field_type": "int",
@@ -57,7 +61,7 @@
         "type": "json",
         "nullable": true,
         "struct": {
-          "field_name": "ConfigObj",
+          "field_name": "Config",
           "field_type": "object",
           "json_tag": "config"
         },
@@ -67,15 +71,58 @@
           "sort": false
         },
         "json_data": {
-          "color": "string",
-          "size": "integer",
-          "tags": "[string]",
+          "color": {
+            "type": "string",
+            "nullable": false,
+            "unique": true,
+            "index": true,
+            "hidden": false,
+            "default": null
+          },
+          "size": {
+            "type": "integer",
+            "nullable": false,
+            "unique": true,
+            "index": true,
+            "hidden": false,
+            "default": null
+          },
+          "tags": {
+            "type": "[string]",
+            "nullable": false,
+            "unique": true,
+            "index": true,
+            "hidden": false,
+            "default": null
+          },
           "extra": {
-            "foo": "bool",
-            "baz": "[integer]",
+            "type": "object",
+            "foo": {
+              "type": "bool",
+              "nullable": false,
+              "unique": true,
+              "index": true,
+              "hidden": false,
+              "default": null
+            },
+            "baz": {
+              "type": "[integer]",
+              "nullable": false,
+              "unique": true,
+              "index": true,
+              "hidden": false,
+              "default": null
+            },
             "bar": {
-              "nested": "string",
-              "nested_array": "[string]"
+              "type": "object",
+              "nested": {
+                "type": "string",
+                "nullable": false,
+                "unique": true,
+                "index": true,
+                "hidden": false,
+                "default": null
+              }
             }
           }
         }

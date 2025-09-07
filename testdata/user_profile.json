@@ -52,16 +52,89 @@
           "sort": false
         },
         "json_data": {
-          "bio": "string",
-          "age": "integer",
+          "bio": {
+            "type": "string",
+            "nullable": false,
+            "unique": false,
+            "index": false,
+            "hidden": false,
+            "default": null
+          },
+          "age": {
+            "type": "integer",
+            "nullable": false,
+            "unique": false,
+            "index": false,
+            "hidden": false,
+            "default": null
+          },
           "settings": {
-            "theme": "string",
+            "type": "object",
+            "theme": {
+              "type": "string",
+              "nullable": false,
+              "unique": false,
+              "index": false,
+              "hidden": false,
+              "default": null
+            },
             "notifications": {
-              "email": "bool",
-              "sms": "bool"
+              "type": "object",
+              "email": {
+                "type": "bool",
+                "nullable": false,
+                "unique": false,
+                "index": false,
+                "hidden": false,
+                "default": null
+              },
+              "sms": {
+                "type": "bool",
+                "nullable": false,
+                "unique": false,
+                "index": false,
+                "hidden": false,
+                "default": null
+              }
             }
           },
-          "tags": "[string]"
+          "tags": {
+            "type": "[string]",
+            "nullable": false,
+            "unique": false,
+            "index": false,
+            "hidden": false,
+            "default": null
+          },
+          "extra": {
+            "type": "object",
+            "is_verified": {
+              "type": "bool",
+              "nullable": false,
+              "unique": false,
+              "index": false,
+              "hidden": false,
+              "default": null
+            },
+            "score": {
+              "type": "integer",
+              "nullable": false,
+              "unique": false,
+              "index": false,
+              "hidden": false,
+              "default": null
+            },
+            "details": {
+              "nested": {
+                "type": "string",
+                "nullable": false,
+                "unique": false,
+                "index": false,
+                "hidden": false,
+                "default": null
+              }
+            }
+          }
         }
       },
       {
