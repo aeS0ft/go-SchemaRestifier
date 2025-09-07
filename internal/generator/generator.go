@@ -5,7 +5,6 @@ import (
 	"go-SchemaRestifier/internal/datastructures"
 	"go-SchemaRestifier/internal/parser"
 	"os"
-	"sync"
 
 	"github.com/iancoleman/strcase"
 )
@@ -132,95 +131,7 @@ func GenerateModel(filePath string, content []parser.Schema) error {
 
 // ConvertNestedMapToNodeTree processes a nested map structure and converts it into a tree-like structure using the datastructures.Node type.
 // It recursively traverses the map, creating nodes for each key-value pair and handling nested maps appropriately.
-func ConvertNestedMapToNodeTree(content map[string]interface{}, n *datastructures.Node, root *datastructures.Node) (datastructures.Node, error) {
-	var wg sync.WaitGroup
-	if root == nil {
-		root = new(datastructures.Node)
-		root.Name = content["...@__root_name__@..."].(string)
-	}
-	if datastructures.IsNodeEmpty(*n) {
-		n.Name = root.Name
-		root = n
-	}
-	if len(content) == 0 {
-		return datastructures.Node{}, fmt.Errorf("empty map")
-	}
-
-	for key, value := range content {
-		// it is the root denoter, so we skip it
-		switch key {
-		case "...@__root_name__@...":
-			continue
-		}
-
-		switch value.(type) {
-
-		case map[string]interface{}:
-			fmt.Println("Nested map reached with value:", value)
-			newN := new(datastructures.Node)
-			newN.Name = key
-			n.Mu.Lock()
-			n.Children = append(n.Children, newN)
-			n.Mu.Unlock()
-
-			wg.Add(1)
-			go func(key string, value interface{}) {
-				defer wg.Done()
-				_, _ = ConvertNestedMapToNodeTree(value.(map[string]interface{}), newN, root)
-
-			}(key, value)
-
-		default:
-			parsedType, _ := ParseTypes(value.(string))
-			typeName := parsedType.String()
-			field := datastructures.Fields{
-				Name: key,
-				Type: typeName,
-			}
-			n.Fields = append(n.Fields, &field)
-
-		}
-	}
-	wg.Wait()
-	return *root, nil
-}
-
 func TraverseTreeModel(n *datastructures.Node, p *string) (string, error) {
-	if p == nil {
-
-		p = new(string)
-
-	}
-	if n == nil {
-		return "", fmt.Errorf("node is nil")
-	} else {
-		*p += fmt.Sprintf("type %sOBJ struct {\n", strcase.ToCamel(n.Name))
-	}
-	fmt.Println(n.Name)
-
-	for _, field := range n.Fields {
-		*p += fmt.Sprintf("\t%s %s `json:\"%s\"`\n", strcase.ToCamel(field.Name), field.Type, field.Name)
-	}
-	// needed to build the struct with the fields for each child so encapsulation works
-	for _, child := range n.Children {
-		*p += fmt.Sprintf("\t%s %sOBJ `json:\"%s\"`\n", strcase.ToCamel(child.Name), strcase.ToCamel(child.Name), child.Name)
-
-	}
-	*p += "}\n\n"
-
-	for _, child := range n.Children {
-
-		pString, err := TraverseTreeModel(child, new(string))
-		if err != nil {
-			return "", err
-		}
-		*p += pString
-
-	}
-
-	return *p, nil
-}
-func TraverseTreeDTO(n *datastructures.Node, p *string) (string, error) {
 	if p == nil {
 
 		p = new(string)
