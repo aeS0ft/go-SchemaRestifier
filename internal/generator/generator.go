@@ -120,8 +120,6 @@ func GenerateModel(filePath string, content []parser.Schema) error {
 	return nil
 }
 
-// ConvertNestedMapToNodeTree processes a nested map structure and converts it into a tree-like structure using the datastructures.Node type.
-// It recursively traverses the map, creating nodes for each key-value pair and handling nested maps appropriately.
 func TraverseTreeModel(n *datastructures.Node, p *string) (string, error) {
 	if p == nil {
 
