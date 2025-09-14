@@ -21,7 +21,6 @@ func JsonDataAlgorithm(content map[string]interface{}, n *datastructures.Node, r
 			typ, _ := m["type"].(string)
 			switch typ {
 			case "object":
-				fmt.Println("Nested map reached with value:", value)
 				newN := new(datastructures.Node)
 				newN.Name = key
 				newN.Hidden = value.(map[string]interface{})["hidden"].(bool)
