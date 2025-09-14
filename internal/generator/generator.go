@@ -88,7 +88,7 @@ func GenerateDTO(filepath string, content []parser.Schema) error {
 
 	for _, schema := range content {
 		depenencies := new(string)
-		*depenencies = "package model\n\nimport (\n"
+		*depenencies = "package dto\n\nimport (\n"
 		modelContent := fmt.Sprintf("type %s struct {\n", strcase.ToCamel(schema.Name))
 		nestedStructContent := ""
 		for _, column := range *schema.Columns {
