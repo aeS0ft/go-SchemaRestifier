@@ -1,6 +1,8 @@
 package datastructures
 
-type Fields struct {
-	Name string
-	Type string
+type Field struct {
+	Name   string
+	Type   string
+	Hidden bool
+	// Add other metadata as needed
 }

@@ -5,6 +5,7 @@ import (
 	"go-SchemaRestifier/internal/datastructures"
 	"go-SchemaRestifier/internal/parser"
 	"os"
+	"strings"
 
 	"github.com/iancoleman/strcase"
 )
@@ -21,6 +22,10 @@ func GeneratorMain(filePath string, content []parser.Schema) error {
 	err = GenerateModel(filePath+"model/", content)
 	if err != nil {
 		return fmt.Errorf("failed to generate model: %w", err)
+	}
+	err = GenerateDTO(filePath+"dto/", content)
+	if err != nil {
+		return fmt.Errorf("failed to generate dto: %w", err)
 	}
 	return nil
 
@@ -81,6 +86,103 @@ func GenerateGoMod(filePath string, name string) error {
 
 func GenerateDTO(filepath string, content []parser.Schema) error {
 
+	for _, schema := range content {
+		depenencies := new(string)
+		*depenencies = "package model\n\nimport (\n"
+		modelContent := fmt.Sprintf("type %s struct {\n", strcase.ToCamel(schema.Name))
+		nestedStructContent := ""
+		for _, column := range *schema.Columns {
+			if column.Hidden {
+				continue
+			} else {
+				s := fmt.Sprintf("%s", column.Type)
+				a, _ := ParseTypes(s)
+				if s != "json" {
+					modelContent += fmt.Sprintf("\t%s %s `db:\"%s\"`\n", strcase.ToCamel(column.Name), a.String(), column.Name)
+					switch a.String() {
+					case "time.Time":
+						if !strings.Contains(*depenencies, "\"time\"") {
+							*depenencies += "\"time\"\n"
+						}
+					}
+				} else {
+					modelContent += fmt.Sprintf("\t%s %s_%sOBJ `json:\"%s\"`\n", strcase.ToCamel(column.Name), strcase.ToCamel(schema.Name), strcase.ToCamel(column.Name), column.Name)
+				}
+				if column.Nestedcolumns != nil {
+					// Your logic for handling nested columns
+					result, _ := TraverseTree(
+						column.Nestedcolumns,
+						nil,
+						func(field datastructures.Field) string {
+							if field.Hidden {
+								return ""
+							}
+							return fmt.Sprintf("\t%s %s `json:\"%s\"`\n", strcase.ToCamel(field.Name), field.Type, field.Name)
+						},
+						func(child *datastructures.Node) string {
+							if child.Hidden {
+								return ""
+							}
+							return fmt.Sprintf("\t%s %s_%sOBJ `json:\"%s\"`\n",
+								strcase.ToCamel(child.Name),
+								strcase.ToCamel(schema.Name),
+								strcase.ToCamel(child.Name),
+								child.Name)
+						},
+						func(node *datastructures.Node) (Value string, isAborted bool) {
+
+							if node.Hidden {
+								return "", true
+							}
+							return fmt.Sprintf("type %s_%sOBJ struct {\n",
+								strcase.ToCamel(schema.Name),
+								strcase.ToCamel(node.Name)), false
+						},
+						func(name string) string {
+							return strcase.ToCamel(name)
+						},
+						"json",
+					)
+					*depenencies, _ = TraverseTree(
+						column.Nestedcolumns,
+						depenencies,
+						func(field datastructures.Field) string {
+							switch field.Type {
+							//add more dependencies here
+							case "time.Time":
+								if !strings.Contains(*depenencies, "\"time\"") {
+									return "\"time\"\n"
+								}
+
+							}
+							return ""
+						},
+						func(child *datastructures.Node) string {
+							return ""
+						},
+						func(node *datastructures.Node) (Value string, isAborted bool) {
+							return "", false
+						},
+						func(name string) string {
+							return ""
+						},
+						"dependencies",
+					)
+					nestedStructContent += result
+				}
+			}
+
+		}
+		modelContent += "}\n\n"
+		modelContent += nestedStructContent
+		*depenencies += ")\n\n"
+		modelContent = *depenencies + modelContent
+
+		err := writeFile(filepath+""+schema.Name+".go", []byte(modelContent))
+		if err != nil {
+			return fmt.Errorf("failed to write file %s: %w", filepath, err)
+		}
+	}
 	return nil
 }
 
@@ -89,8 +191,9 @@ func GenerateModel(filePath string, content []parser.Schema) error {
 
 	// TODO: add handling for existing file
 	for _, schema := range content {
-		modelContent := "package model\n\n"
-		modelContent += fmt.Sprintf("type %s struct {\n", strcase.ToCamel(schema.Name))
+		depenencies := new(string)
+		*depenencies = "package model\n\nimport (\n"
+		modelContent := fmt.Sprintf("type %s struct {\n", strcase.ToCamel(schema.Name))
 		nestedStructContent := ""
 
 		for _, column := range *schema.Columns {
@@ -98,28 +201,78 @@ func GenerateModel(filePath string, content []parser.Schema) error {
 			a, _ := ParseTypes(s)
 			if s != "json" {
 				modelContent += fmt.Sprintf("\t%s %s `db:\"%s\"`\n", strcase.ToCamel(column.Name), a.String(), column.Name)
+				switch a.String() {
+				case "time.Time":
+					if !strings.Contains(*depenencies, "\"time\"") {
+						*depenencies += "\"time\"\n"
+					}
+				}
 			} else {
-				modelContent += fmt.Sprintf("\t%s %sOBJ `json:\"%s\"`\n", strcase.ToCamel(column.Name), strcase.ToCamel(column.Name), column.Name)
+				modelContent += fmt.Sprintf("\t%s %s_%sOBJ `json:\"%s\"`\n", strcase.ToCamel(column.Name), strcase.ToCamel(schema.Name), strcase.ToCamel(column.Name), column.Name)
 
 			}
 			if column.Nestedcolumns != nil {
 				// Your logic for handling nested columns
-				p := new(string)
-				traTree, _ := TraverseTreeModel(column.Nestedcolumns, p)
-				nestedStructContent += traTree
+				result, _ := TraverseTree(
+					column.Nestedcolumns,
+					nil,
+					func(field datastructures.Field) string {
+						return fmt.Sprintf("\t%s %s `json:\"%s\"`\n", strcase.ToCamel(field.Name), field.Type, field.Name)
+					},
+					func(child *datastructures.Node) string {
+						return fmt.Sprintf("\t%s %s_%sOBJ `json:\"%s\"`\n",
+							strcase.ToCamel(child.Name),
+							strcase.ToCamel(schema.Name),
+							strcase.ToCamel(child.Name),
+							child.Name)
+					},
+					func(node *datastructures.Node) (Value string, isAborted bool) {
+						return fmt.Sprintf("type %s_%sOBJ struct {\n",
+							strcase.ToCamel(schema.Name),
+							strcase.ToCamel(node.Name)), false
+					},
+					func(name string) string {
+						return strcase.ToCamel(name)
+					},
+					"json",
+				)
+				// call to build the import dependencies for nested structs
+
+				*depenencies, _ = TraverseTree(
+					column.Nestedcolumns,
+					depenencies,
+					func(field datastructures.Field) string {
+						switch field.Type {
+						//add more dependencies here
+						case "time.Time":
+							if !strings.Contains(*depenencies, "\"time\"") {
+								return "\"time\"\n"
+							}
+
+						}
+						return ""
+					},
+					func(child *datastructures.Node) string {
+						return ""
+					},
+					func(node *datastructures.Node) (Value string, isAborted bool) {
+						return "", false
+					},
+					func(name string) string {
+						return ""
+					},
+					"dependencies",
+				)
+
+				nestedStructContent += result
+
 			}
-			//	if len(column.Nestedcolumns) > 0 {
-			//		p := new(string)
-			//		column.Nestedcolumns["...@__root_name__@..."] = column.Name
-			//		nestedthing, _ := ConvertNestedMapToNodeTree(column.Nestedcolumns, &datastructures.Node{}, nil)
-			//		traTree, _ := TraverseTreeModel(&nestedthing, p)
-			//		nestedStructContent += traTree
-			//
-			//	}
 
 		}
 		modelContent += "}\n\n"
 		modelContent += nestedStructContent
+		*depenencies += ")\n\n"
+		modelContent = *depenencies + modelContent
 
 		err := writeFile(filePath+""+schema.Name+".go", []byte(modelContent))
 		if err != nil {
@@ -129,41 +282,46 @@ func GenerateModel(filePath string, content []parser.Schema) error {
 	return nil
 }
 
-// ConvertNestedMapToNodeTree processes a nested map structure and converts it into a tree-like structure using the datastructures.Node type.
-// It recursively traverses the map, creating nodes for each key-value pair and handling nested maps appropriately.
-func TraverseTreeModel(n *datastructures.Node, p *string) (string, error) {
-	if p == nil {
-
-		p = new(string)
-
-	}
+// TraverseTree traverses the tree and generates code based on the formatters provided.
+func TraverseTree(
+	n *datastructures.Node,
+	p *string,
+	formatField func(field datastructures.Field) string,
+	formatChild func(child *datastructures.Node) string,
+	formatNode func(node *datastructures.Node) (Value string, isAborted bool),
+	typeName func(name string) string,
+	tag string,
+) (string, error) {
 	if n == nil {
 		return "", fmt.Errorf("node is nil")
-	} else {
-		*p += fmt.Sprintf("type %sOBJ struct {\n", strcase.ToCamel(n.Name))
 	}
-	fmt.Println(n.Name)
+	if p == nil {
+		p = new(string)
+	}
 
+	// check if the formatNode sends an abort signal and if so, return early. implemented in the call.
+	nodeStr, isAborted := formatNode(n)
+	if isAborted {
+		return "", nil
+	}
+	*p += nodeStr
 	for _, field := range n.Fields {
-		*p += fmt.Sprintf("\t%s %s `json:\"%s\"`\n", strcase.ToCamel(field.Name), field.Type, field.Name)
+		*p += formatField(*field)
 	}
-	// needed to build the struct with the fields for each child so encapsulation works
 	for _, child := range n.Children {
-		*p += fmt.Sprintf("\t%s %sOBJ `json:\"%s\"`\n", strcase.ToCamel(child.Name), strcase.ToCamel(child.Name), child.Name)
-
+		*p += formatChild(child)
 	}
-	*p += "}\n\n"
-
+	// TODO: make a non implementation specific function for this
+	if tag == "json" {
+		*p += "}\n\n"
+	}
 	for _, child := range n.Children {
-
-		pString, err := TraverseTreeModel(child, new(string))
+		pString, err := TraverseTree(child, new(string), formatField, formatChild, formatNode, typeName, tag)
 		if err != nil {
 			return "", err
 		}
 		*p += pString
-
 	}
-
 	return *p, nil
 }
 func GenerateAPIController(filePath string, content []byte) error {

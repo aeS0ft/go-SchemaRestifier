@@ -8,7 +8,7 @@ import (
 
 func JsonDataAlgorithm(content map[string]interface{}, n *datastructures.Node, root *datastructures.Node) (datastructures.Node, error) {
 	var wg sync.WaitGroup
-	if datastructures.IsNodeEmpty(*n) {
+	if datastructures.IsNodeEmpty(n) {
 		n.Name = root.Name
 		root = n
 	}
@@ -24,6 +24,7 @@ func JsonDataAlgorithm(content map[string]interface{}, n *datastructures.Node, r
 				fmt.Println("Nested map reached with value:", value)
 				newN := new(datastructures.Node)
 				newN.Name = key
+				newN.Hidden = value.(map[string]interface{})["hidden"].(bool)
 				n.Mu.Lock()
 				n.Children = append(n.Children, newN)
 				n.Mu.Unlock()
@@ -37,7 +38,7 @@ func JsonDataAlgorithm(content map[string]interface{}, n *datastructures.Node, r
 			default:
 				parsedType, _ := ParseTypes(typ)
 				typeName := parsedType.String()
-				field := datastructures.Fields{
+				field := datastructures.Field{
 					Name: key,
 					Type: typeName,
 				}
