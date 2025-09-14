@@ -76,7 +76,7 @@
             "nullable": false,
             "unique": true,
             "index": true,
-            "hidden": false,
+            "hidden": true,
             "default": null
           },
           "size": {
@@ -97,6 +97,11 @@
           },
           "extra": {
             "type": "object",
+            "nullable": false,
+            "unique": true,
+            "index": true,
+            "hidden": true,
+            "default": null,
             "foo": {
               "type": "bool",
               "nullable": false,
@@ -115,6 +120,11 @@
             },
             "bar": {
               "type": "object",
+              "nullable": false,
+              "unique": true,
+              "index": true,
+              "hidden": false,
+              "default": null,
               "nested": {
                 "type": "string",
                 "nullable": false,

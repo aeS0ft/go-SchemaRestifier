@@ -70,6 +70,11 @@
           },
           "settings": {
             "type": "object",
+            "nullable": false,
+            "unique": false,
+            "index": false,
+            "hidden": false,
+            "default": null,
             "theme": {
               "type": "string",
               "nullable": false,
@@ -80,6 +85,11 @@
             },
             "notifications": {
               "type": "object",
+              "nullable": false,
+              "unique": false,
+              "index": false,
+              "hidden": false,
+              "default": null,
               "email": {
                 "type": "bool",
                 "nullable": false,
@@ -108,6 +118,11 @@
           },
           "extra": {
             "type": "object",
+            "nullable": false,
+            "unique": false,
+            "index": false,
+            "hidden": true,
+            "default": null,
             "is_verified": {
               "type": "bool",
               "nullable": false,
@@ -125,6 +140,12 @@
               "default": null
             },
             "details": {
+              "type": "object",
+              "nullable": false,
+              "unique": false,
+              "index": false,
+              "hidden": true,
+              "default": null,
               "nested": {
                 "type": "string",
                 "nullable": false,
