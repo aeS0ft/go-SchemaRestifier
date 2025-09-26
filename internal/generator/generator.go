@@ -10,22 +10,31 @@ import (
 	"github.com/iancoleman/strcase"
 )
 
-type TableNameList []string
+type Generator struct {
+	Schemas    []parser.Schema
+	APIName    string
+	FilePath   string
+	TableNames []string
+}
 
 // GeneratorMain is the main function for generating the Go code based on the parsed schema.
 // It takes the file path where the generated code will be saved and the content which is a slice of parser.Schema.
-func GeneratorMain(filePath string, content []parser.Schema) error {
-	err := GenerateRunner(filePath+"/runner.go", content)
+func (g *Generator) GeneratorMain() error {
+	err := g.GenerateRunner()
 	if err != nil {
 		return err
 	}
-	err = GenerateModel(filePath+"model/", content)
+	err = g.GenerateModel()
 	if err != nil {
 		return fmt.Errorf("failed to generate model: %w", err)
 	}
-	err = GenerateDTO(filePath+"dto/", content)
+	err = g.GenerateDTO()
 	if err != nil {
 		return fmt.Errorf("failed to generate dto: %w", err)
+	}
+	err = g.GenerateGoMod()
+	if err != nil {
+		return fmt.Errorf("failed to generate go.mod: %w", err)
 	}
 	return nil
 
@@ -39,13 +48,12 @@ func GeneratorMain(filePath string, content []parser.Schema) error {
 
 }
 
-func GenerateRunner(filePath string, content []parser.Schema) error {
-	exists, err := checkFileExists(filePath)
-	tableNames := make(TableNameList, 0, len(content))
-	for _, value := range content {
-		tableNames = append(tableNames, value.Name)
-	}
-	contents := "package main \n\nimport (\n\t\"fmt\"\n\"net/http\"\n)\n\nfunc main() {\nmux := http.NewServeMux()\n"
+func (g *Generator) GenerateRunner() error {
+	exists, err := checkFileExists(g.FilePath + "/runner.go")
+	filePath := g.FilePath + "/runner.go"
+
+	import_content := "package main \n\nimport (\n\t\"fmt\"\n\"net/http\"\n"
+	contents := "\n\nfunc main() {\n\n\tmux := http.NewServeMux()\n"
 	if err != nil {
 		return fmt.Errorf("failed to check if file exists %s: %w", filePath, err)
 	}
@@ -54,39 +62,48 @@ func GenerateRunner(filePath string, content []parser.Schema) error {
 		fmt.Printf("File %s already exists, skipping generation.\n", filePath)
 		return nil
 	}
-	for _, tableName := range tableNames {
+	for _, tableName := range g.TableNames {
 		fmt.Printf("Generating runner/api-routing for table: %s\n", tableName)
-		contents += fmt.Sprintf("\t%s.RegisterRoutes(mux)\n}", tableName)
+		import_content += fmt.Sprintf("\t\"%s/controller/%s\"\n", g.APIName, tableName)
+		contents += fmt.Sprintf("\n\t%s.RegisterRoutes(mux)\n", tableName)
 
 	}
+	import_content += ")\n"
+	contents = import_content + contents
 	contents += "\n\tfmt.Println(\"Server is running on port 8080\")\n\thttp.ListenAndServe(\":8080\", mux)\n}\n"
+
+	err = writeFile(filePath, []byte(contents))
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
 
-func GenerateGoMod(filePath string, name string) error {
-	modContent := fmt.Sprintf("module %s\n\ngo 1.20\n\nrequire (\n\tgithub.com/gorilla/mux v1.8.0\n)\n", name) // Replace %s with the module name
-	exists, err := checkFileExists(filePath + "/go.mod")
+func (g *Generator) GenerateGoMod() error {
+	modContent := fmt.Sprintf("module %s\n\ngo 1.20\n\nrequire (\n\tgithub.com/gorilla/mux v1.8.0\n)\n", g.APIName) // Replace %s with the module name
+	exists, err := checkFileExists(g.FilePath + "/go.mod")
+	filepath := g.FilePath + "/go.mod"
 	if err != nil {
 		return fmt.Errorf("failed to check if go.mod file exists: %w", err)
 	}
 	if exists {
 		// TODO: add handling for existing file
 		// For now, we will just skip generation if the file already exists.
-		fmt.Printf("go.mod file already exists at %s, skipping generation.\n", filePath+"/go.mod")
+		fmt.Printf("go.mod file already exists at %s, skipping generation.\n", filepath)
 		return nil
 	}
 
-	err = writeFile(filePath+"/go.mod", []byte(modContent))
+	err = writeFile(filepath, []byte(modContent))
 	if err != nil {
 		return fmt.Errorf("failed to write go.mod file: %w", err)
 	}
 	return nil
 }
 
-func GenerateDTO(filepath string, content []parser.Schema) error {
+func (g *Generator) GenerateDTO() error {
 
-	for _, schema := range content {
+	for _, schema := range g.Schemas {
 		depenencies := new(string)
 		*depenencies = "package model\n\nimport (\n"
 		modelContent := fmt.Sprintf("type %s struct {\n", strcase.ToCamel(schema.Name))
@@ -178,19 +195,19 @@ func GenerateDTO(filepath string, content []parser.Schema) error {
 		*depenencies += ")\n\n"
 		modelContent = *depenencies + modelContent
 
-		err := writeFile(filepath+""+schema.Name+".go", []byte(modelContent))
+		err := writeFile(g.FilePath+"/"+"dto"+"/"+schema.Name+".go", []byte(modelContent))
 		if err != nil {
-			return fmt.Errorf("failed to write file %s: %w", filepath, err)
+			return fmt.Errorf("failed to write file %s: %w", g.FilePath+""+schema.Name+".go", err)
 		}
 	}
 	return nil
 }
 
 // GenerateModel generates the model layer with all the structs from the schema
-func GenerateModel(filePath string, content []parser.Schema) error {
+func (g *Generator) GenerateModel() error {
 
 	// TODO: add handling for existing file
-	for _, schema := range content {
+	for _, schema := range g.Schemas {
 		depenencies := new(string)
 		*depenencies = "package model\n\nimport (\n"
 		modelContent := fmt.Sprintf("type %s struct {\n", strcase.ToCamel(schema.Name))
@@ -274,9 +291,9 @@ func GenerateModel(filePath string, content []parser.Schema) error {
 		*depenencies += ")\n\n"
 		modelContent = *depenencies + modelContent
 
-		err := writeFile(filePath+""+schema.Name+".go", []byte(modelContent))
+		err := writeFile(g.FilePath+"/"+"model"+"/"+schema.Name+".go", []byte(modelContent))
 		if err != nil {
-			return fmt.Errorf("failed to write file %s: %w", filePath, err)
+			return fmt.Errorf("failed to write file %s: %w", g.FilePath+""+schema.Name+".go", err)
 		}
 	}
 	return nil

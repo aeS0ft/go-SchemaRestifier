@@ -6,13 +6,19 @@ import (
 )
 
 // Package parser provides functionality to parse and handle schemas in a structured format.
+type CrudOperation struct {
+	Operation    string `json:"operation"`
+	Endpoint     string `json:"endpoint"`
+	AuthRequired bool   `json:"auth_required"`
+	By           string `json:"by,omitempty"`
+}
 
 // Schema represents the structure of a parsed schema.
 type Schema struct {
-	Name        string                 `json:"name"`
-	Description string                 `json:"description"`
-	Columns     *[]Column              `json:"columns"` // dynamic keys/values
-	Crud        map[string]interface{} `json:"crud"`
+	Name        string          `json:"name"`
+	Description string          `json:"description"`
+	Columns     *[]Column       `json:"columns"` // dynamic keys/values
+	Crud        []CrudOperation `json:"crud"`    // dynamic keys/values
 }
 
 // Column represents a single column in a schema.
