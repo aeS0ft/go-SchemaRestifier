@@ -119,7 +119,21 @@ func ParseSchema(schemaFilePath string) ([]Schema, error) {
 					}
 				}
 			} else if key == "crud" {
-				schema.Crud = value.(map[string]interface{})
+				crudList := value.([]interface{})
+				schema.Crud = make([]CrudOperation, 0, len(crudList))
+				for _, crudItem := range crudList {
+					if crudMap, ok := crudItem.(map[string]interface{}); ok {
+						op := CrudOperation{
+							Operation:    crudMap["operation"].(string),
+							Endpoint:     crudMap["endpoint"].(string),
+							AuthRequired: crudMap["auth_required"].(bool),
+						}
+						if by, ok := crudMap["by"].(string); ok {
+							op.By = by
+						}
+						schema.Crud = append(schema.Crud, op)
+					}
+				}
 			} else {
 				fmt.Printf("Unknown key: %s with value: %v\n", key, value)
 			}

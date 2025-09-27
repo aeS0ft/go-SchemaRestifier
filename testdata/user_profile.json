@@ -175,28 +175,28 @@
       }
     ]
   },
-  "crud": {
-    "create": {
-      "enabled": true,
+  "crud": [
+    {
+      "operation": "post",
       "endpoint": "/user_profile",
       "auth_required": true
     },
-    "read": {
-      "enabled": true,
+    {
+      "operation": "get",
       "endpoint": "/user_profile",
       "auth_required": true,
       "list_supported": true,
       "single_supported": true
     },
-    "update": {
-      "enabled": true,
+    {
+      "operation": "put",
       "endpoint": "/user_profile/{user_id}",
       "auth_required": true
     },
-    "delete": {
-      "enabled": true,
+    {
+      "operation": "delete",
       "endpoint": "/user_profile/{user_id}",
       "auth_required": true
     }
-  }
+  ]
 }

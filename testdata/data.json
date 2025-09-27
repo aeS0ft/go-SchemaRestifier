@@ -139,28 +139,27 @@
       }
     ]
   },
-  "crud": {
-    "create": {
-      "enabled": true,
+  "crud": [
+    {
+      "operation": "post",
       "endpoint": "/example_table",
       "auth_required": false
     },
-    "read": {
-      "enabled": true,
-      "endpoint": "/example_table",
+    {
+      "operation": "get",
+      "endpoint": "/example_table/{example_id}",
       "auth_required": false,
-      "list_supported": true,
-      "single_supported": true
+      "by": "id"
     },
-    "update": {
-      "enabled": true,
+    {
+      "operation": "put",
       "endpoint": "/example_table/{example_id}",
       "auth_required": false
     },
-    "delete": {
-      "enabled": true,
+    {
+      "operation": "delete",
       "endpoint": "/example_table/{example_id}",
       "auth_required": false
     }
-  }
+  ]
 }
